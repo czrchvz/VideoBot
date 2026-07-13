@@ -6,18 +6,16 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: kivy/buildozer:latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build APK con Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1
-        id: buildozer
-        with:
-          command: buildozer android debug
-          workdir: .
-          buildozer_version: stable
+      - name: Compilar APK
+        run: |
+          yes | buildozer android debug 2>&1
       - name: Subir APK
         uses: actions/upload-artifact@v4
         with:
           name: VideoBot-APK
-          path: ${{ steps.buildozer.outputs.filename }}
+          path: bin/*.apk
           retention-days: 30
