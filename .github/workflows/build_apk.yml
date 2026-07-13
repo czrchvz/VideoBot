@@ -8,27 +8,19 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: kivy/buildozer:latest
+      options: --user root
+    env:
+      HOME: /home/user
     steps:
       - uses: actions/checkout@v4
 
-      - name: Preparar Android SDK
-        run: |
-          SDK_DIR=/github/home/.buildozer/android/platform/android-sdk
-          mkdir -p ${SDK_DIR}/cmdline-tools
-          # Descargar cmdline-tools modernas
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O /tmp/cmdtools.zip
-          unzip -q /tmp/cmdtools.zip -d /tmp/cmdtools
-          mkdir -p ${SDK_DIR}/cmdline-tools/latest
-          mv /tmp/cmdtools/cmdline-tools/* ${SDK_DIR}/cmdline-tools/latest/
-          # Crear symlink para buildozer que busca tools/bin/sdkmanager
-          mkdir -p ${SDK_DIR}/tools/bin
-          ln -sf ${SDK_DIR}/cmdline-tools/latest/bin/sdkmanager ${SDK_DIR}/tools/bin/sdkmanager
-          # Aceptar licencias
-          yes | ${SDK_DIR}/cmdline-tools/latest/bin/sdkmanager --sdk_root=${SDK_DIR} --licenses 2>/dev/null || true
-          echo "SDK_DIR=${SDK_DIR}" >> $GITHUB_ENV
-
       - name: Compilar APK
-        run: yes | buildozer android debug 2>&1
+        run: |
+          # Asegurar que buildozer use el HOME correcto del contenedor
+          export HOME=/home/user
+          export BUILDOZER_WARN_ON_ROOT=0
+          cd $GITHUB_WORKSPACE
+          yes | buildozer android debug 2>&1
 
       - name: Subir APK
         uses: actions/upload-artifact@v4
