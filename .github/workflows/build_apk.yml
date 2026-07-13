@@ -18,7 +18,7 @@ jobs:
       - name: Instalar dependencias
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y git zip unzip libffi-dev libssl-dev build-essential ccache autoconf libtool pkg-config cmake libgstreamer1.0-dev lld
+          sudo apt-get install -y git zip unzip             libffi-dev libssl-dev build-essential             ccache autoconf libtool pkg-config cmake
           pip install --upgrade pip
           pip install cython==0.29.36
           pip install buildozer
@@ -26,10 +26,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.buildozer
-          key: buildozer-cache-v2
+          key: buildozer-cache-v3-${{ runner.os }}
       - name: Compilar APK
         run: yes | buildozer android debug 2>&1
       - name: Subir APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: VideoBot-APK
