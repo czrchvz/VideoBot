@@ -11,19 +11,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Aceptar licencias Android SDK
+      - name: Preparar Android SDK
         run: |
-          mkdir -p /github/home/.buildozer/android/platform/android-sdk/licenses
-          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > /github/home/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-          echo "84831b9409646a918e30573bab4c9c91346d8abd" >> /github/home/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-          echo "d975f751698a77b662f1254ddbeed3901e976f5a" > /github/home/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
-          yes | sdkmanager --licenses 2>/dev/null || true
+          SDK_DIR=/github/home/.buildozer/android/platform/android-sdk
+          mkdir -p ${SDK_DIR}/cmdline-tools
+          # Descargar cmdline-tools modernas
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O /tmp/cmdtools.zip
+          unzip -q /tmp/cmdtools.zip -d /tmp/cmdtools
+          mkdir -p ${SDK_DIR}/cmdline-tools/latest
+          mv /tmp/cmdtools/cmdline-tools/* ${SDK_DIR}/cmdline-tools/latest/
+          # Crear symlink para buildozer que busca tools/bin/sdkmanager
+          mkdir -p ${SDK_DIR}/tools/bin
+          ln -sf ${SDK_DIR}/cmdline-tools/latest/bin/sdkmanager ${SDK_DIR}/tools/bin/sdkmanager
+          # Aceptar licencias
+          yes | ${SDK_DIR}/cmdline-tools/latest/bin/sdkmanager --sdk_root=${SDK_DIR} --licenses 2>/dev/null || true
+          echo "SDK_DIR=${SDK_DIR}" >> $GITHUB_ENV
 
       - name: Compilar APK
-        env:
-          ANDROID_SDK_ROOT: /github/home/.buildozer/android/platform/android-sdk
-        run: |
-          yes | buildozer android debug 2>&1
+        run: yes | buildozer android debug 2>&1
 
       - name: Subir APK
         uses: actions/upload-artifact@v4
